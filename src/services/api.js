@@ -1,16 +1,14 @@
 import axios from 'axios'
 
-let userData = localStorage.getItem('codeburger:userData')
-
-if (userData) {
-  userData = JSON.parse(userData)
-}
-
 const apiCodeBurger = axios.create({
-  baseURL: 'http://localhost:3001',
-  headers: {
-    authorization: `Bearer ${userData && userData.token}`
-  }
+  baseURL: 'http://localhost:3001'
+})
+
+apiCodeBurger.interceptors.request.use(async config => {
+  const userData = localStorage.getItem('codeburger:userData')
+  const token = userData && JSON.parse(userData).token
+  config.headers.Authorization = `Bearer ${token}`
+  return config
 })
 
 export default apiCodeBurger
