@@ -13,10 +13,24 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import PropTypes from 'prop-types'
 
-import { ProductsImg } from './styles'
+import api from '../../../services/api'
+import status from './order-status'
+import { ProductsImg, ReactSelectStyle } from './styles'
 
 function Row({ row }) {
   const [open, setOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false)
+
+  async function setNewStatus(id, status) {
+    setIsLoading(true)
+    try {
+      await api.put(`orders/${id}`, { status })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <React.Fragment>
@@ -35,7 +49,20 @@ function Row({ row }) {
         </TableCell>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.date}</TableCell>
-        <TableCell>{row.status}</TableCell>
+        <TableCell>
+          <ReactSelectStyle
+            options={status}
+            menuPortalTarget={document.body}
+            placeholder="Status"
+            defaultValue={
+              status.find(option => option.value === row.status) || null
+            }
+            onChange={newStatus => {
+              setNewStatus(row.orderId, newStatus.value)
+            }}
+            isLoading={isLoading}
+          />
+        </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
