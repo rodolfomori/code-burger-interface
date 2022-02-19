@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import ReactSelect from 'react-select'
 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
@@ -9,19 +9,24 @@ import { Container, Label, Input, ButtonStyles, LabelUpload } from './styles'
 
 function NewProduct() {
   const [fileName, setFileName] = useState(null)
-  const { register, handleSubmit } = useForm()
+  const [categories, setCategories] = useState([])
+  const { register, handleSubmit, control } = useForm()
+
   const onSubmit = data => console.log(data)
 
   useEffect(() => {
-    async function loadOrders() {
-      const { data } = await api.get('products')
+    async function loadCategories() {
+      const { data } = await api.get('categories')
+
+      console.log(data)
+      setCategories(data)
     }
-    loadOrders()
+    loadCategories()
   }, [])
 
   return (
     <Container>
-      <form noValidate>
+      <form noValidate onSubmit={handleSubmit(onSubmit)}>
         <Label>Nome</Label>
         <Input type="text" {...register('name')} />
 
@@ -47,7 +52,21 @@ function NewProduct() {
           />
         </LabelUpload>
 
-        <ReactSelect />
+        <Controller
+          name="category_id"
+          control={control}
+          render={({ field }) => {
+            return (
+              <ReactSelect
+                {...field}
+                options={categories}
+                getOptionLabel={cat => cat.name}
+                getOptionValue={cat => cat.id}
+                placeholder="Categorias"
+              />
+            )
+          }}
+        ></Controller>
 
         <ButtonStyles>Adicionar produto</ButtonStyles>
       </form>
@@ -56,3 +75,18 @@ function NewProduct() {
 }
 
 export default NewProduct
+
+/*
+Input
+
+Não controlados => Eles não são controlados por NINGUÉM, se viram sozinhos.
+Ex: Um input que ele próprio guarda o seu valor. Auto-suficiente!
+
+Controlados => Eles são controlados por algum outro componente ou não são auto-suficientes.
+Ex: Um input que não guarda o valor dele próprio, ele necessita guardar em uma variável.
+
+
+
+
+
+*/
