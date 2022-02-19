@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import { useHistory } from 'react-router-dom'
 import ReactSelect from 'react-select'
+import { toast } from 'react-toastify'
 
 import { yupResolver } from '@hookform/resolvers/yup'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
@@ -13,6 +15,7 @@ import { Container, Label, Input, ButtonStyles, LabelUpload } from './styles'
 function NewProduct() {
   const [fileName, setFileName] = useState(null)
   const [categories, setCategories] = useState([])
+  const { push } = useHistory()
 
   const schema = Yup.object().shape({
     name: Yup.string().required('Digite o nome do produto'),
@@ -39,7 +42,24 @@ function NewProduct() {
     resolver: yupResolver(schema)
   })
 
-  const onSubmit = data => console.log(data)
+  const onSubmit = async data => {
+    const productDataFormData = new FormData()
+
+    productDataFormData.append('name', data.name)
+    productDataFormData.append('price', data.price)
+    productDataFormData.append('category_id', data.category.id)
+    productDataFormData.append('file', data.file[0])
+
+    await toast.promise(api.post('products', productDataFormData), {
+      pending: 'Criando novo produto...',
+      success: 'Produto criado com sucesso',
+      error: 'Falha ao criar o produto'
+    })
+
+    setTimeout(() => {
+      push('/listar-produtos')
+    }, 2000)
+  }
 
   useEffect(() => {
     async function loadCategories() {
@@ -52,50 +72,58 @@ function NewProduct() {
   return (
     <Container>
       <form noValidate onSubmit={handleSubmit(onSubmit)}>
-        <Label>Nome</Label>
-        <Input type="text" {...register('name')} />
-        <ErrorMessage>{errors.name?.message}</ErrorMessage>
+        <div>
+          <Label>Nome</Label>
+          <Input type="text" {...register('name')} />
+          <ErrorMessage>{errors.name?.message}</ErrorMessage>
+        </div>
 
-        <Label>Preço</Label>
-        <Input type="number" {...register('price')} />
-        <ErrorMessage>{errors.price?.message}</ErrorMessage>
+        <div>
+          <Label>Preço</Label>
+          <Input type="number" {...register('price')} />
+          <ErrorMessage>{errors.price?.message}</ErrorMessage>
+        </div>
 
-        <LabelUpload>
-          {fileName || (
-            <>
-              <CloudUploadIcon />
-              Carregue a imagem do produto
-            </>
-          )}
+        <div>
+          <LabelUpload>
+            {fileName || (
+              <>
+                <CloudUploadIcon />
+                Carregue a imagem do produto
+              </>
+            )}
 
-          <input
-            type="file"
-            id="image-input"
-            accept="image/png, image/jpeg"
-            {...register('file')}
-            onChange={value => {
-              setFileName(value.target.files[0]?.name)
+            <input
+              type="file"
+              id="image-input"
+              accept="image/png, image/jpeg"
+              {...register('file')}
+              onChange={value => {
+                setFileName(value.target.files[0]?.name)
+              }}
+            />
+          </LabelUpload>
+          <ErrorMessage>{errors.file?.message}</ErrorMessage>
+        </div>
+
+        <div>
+          <Controller
+            name="category"
+            control={control}
+            render={({ field }) => {
+              return (
+                <ReactSelect
+                  {...field}
+                  options={categories}
+                  getOptionLabel={cat => cat.name}
+                  getOptionValue={cat => cat.id}
+                  placeholder="Categorias"
+                />
+              )
             }}
-          />
-        </LabelUpload>
-        <ErrorMessage>{errors.file?.message}</ErrorMessage>
-
-        <Controller
-          name="category_id"
-          control={control}
-          render={({ field }) => {
-            return (
-              <ReactSelect
-                {...field}
-                options={categories}
-                getOptionLabel={cat => cat.name}
-                getOptionValue={cat => cat.id}
-                placeholder="Categorias"
-              />
-            )
-          }}
-        ></Controller>
-        <ErrorMessage>{errors.category?.message}</ErrorMessage>
+          ></Controller>
+          <ErrorMessage>{errors.category?.message}</ErrorMessage>
+        </div>
 
         <ButtonStyles>Adicionar produto</ButtonStyles>
       </form>
@@ -104,18 +132,3 @@ function NewProduct() {
 }
 
 export default NewProduct
-
-/*
-Input
-
-Não controlados => Eles não são controlados por NINGUÉM, se viram sozinhos.
-Ex: Um input que ele próprio guarda o seu valor. Auto-suficiente!
-
-Controlados => Eles são controlados por algum outro componente ou não são auto-suficientes.
-Ex: Um input que não guarda o valor dele próprio, ele necessita guardar em uma variável.
-
-
-
-
-
-*/
